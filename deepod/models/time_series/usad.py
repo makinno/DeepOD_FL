@@ -227,7 +227,8 @@ class USAD(BaseDeepAD):
             val_loss1 = np.nan
             val_loss2 = np.nan
             if val_loader is not None:
-                outputs = [self.model.validation_step(batch.to(self.device), i+1) for [batch] in val_loader]
+                with torch.no_grad(): # Disable gradient calculation for validation
+                    outputs = [self.model.validation_step(batch.to(self.device), i+1) for [batch] in val_loader]
                 result = self.model.validation_epoch_end(outputs)
                 val_loss1, val_loss2 = result['val_loss1'], result['val_loss2']
 
