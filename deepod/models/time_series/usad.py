@@ -260,11 +260,12 @@ class USAD(BaseDeepAD):
         """
         
         results = []
-        for [batch] in test_loader:
-            batch = batch.to(self.device)
-            w1 = self.model.decoder1(self.model.encoder(batch))
-            w2 = self.model.decoder2(self.model.encoder(w1))
-            results.append(alpha * torch.mean((batch - w1) ** 2, axis=1) + beta * torch.mean((batch - w2) ** 2, axis=1))
+        with torch.no_grad():
+            for [batch] in test_loader:
+                batch = batch.to(self.device)
+                w1 = self.model.decoder1(self.model.encoder(batch))
+                w2 = self.model.decoder2(self.model.encoder(w1))
+                results.append(alpha * torch.mean((batch - w1) ** 2, axis=1) + beta * torch.mean((batch - w2) ** 2, axis=1))
         return results
 
     def training_forward(self, batch_x, net, criterion):
@@ -462,13 +463,13 @@ class UsadModel(nn.Module):
                 Dictionary with validation losses from both decoders.
             
         """
-        
-        z = self.encoder(batch)
-        w1 = self.decoder1(z)
-        w2 = self.decoder2(z)
-        w3 = self.decoder2(self.encoder(w1))
-        loss1 = 1 / n * torch.mean((batch - w1) ** 2) + (1 - 1 / n) * torch.mean((batch - w3) ** 2)
-        loss2 = 1 / n * torch.mean((batch - w2) ** 2) - (1 - 1 / n) * torch.mean((batch - w3) ** 2)
+        with torch.no_grad():
+            z = self.encoder(batch)
+            w1 = self.decoder1(z)
+            w2 = self.decoder2(z)
+            w3 = self.decoder2(self.encoder(w1))
+            loss1 = 1 / n * torch.mean((batch - w1) ** 2) + (1 - 1 / n) * torch.mean((batch - w3) ** 2)
+            loss2 = 1 / n * torch.mean((batch - w2) ** 2) - (1 - 1 / n) * torch.mean((batch - w3) ** 2)
         return {'val_loss1': loss1, 'val_loss2': loss2}
 
     def validation_epoch_end(self, outputs):
